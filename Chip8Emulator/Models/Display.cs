@@ -1,4 +1,4 @@
-namespace Chip8Emulator.Model;
+namespace Chip8Emulator.Models;
 
 public class Display
 {

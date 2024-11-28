@@ -1,5 +1,5 @@
 // http://devernay.free.fr/hacks/chip8/C8TECH10.HTM
-namespace Chip8Emulator.Model;
+namespace Chip8Emulator.Models;
 
 public class CPU
 {
