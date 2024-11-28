@@ -6,6 +6,7 @@ public class CPU
     private Registers _registers;
     private OpCode _currentOpCode;
     private OpCode _nextOpCode;
+    private byte _keyboardKey = 0x0;
 
     public CPU()
     {
