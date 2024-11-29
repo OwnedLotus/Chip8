@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace Chip8Emulator.Models;
 
-public class Cpu()
+public class Cpu(string path)
 {
     private Registers _registers = new();
     private ushort _opcode = 0x0000;
@@ -13,13 +13,8 @@ public class Cpu()
     private SoundTimer _soundTimer = new();
     private DelayTimer _delayTimer = new();
     private Stack<ushort> _addressStack = new();
-    private Memory _memory;
-
-    public void Tick()
-    {
-        _delayTimer.Tick();
-        _soundTimer.Tick();
-    }
+    private Memory _memory = new(path);
+    private Display _display = new();
 
     public void ReadKey(byte key)
     {
@@ -48,19 +43,16 @@ public class Cpu()
                     throw new NotImplementedException();
                     break;
                 } 
-                else if (_opcode == 0x00EE)
+                if (_opcode == 0x00EE)
                 {
                     // RET
                     // pc = stack.Pop();
                     _registers.PC = _addressStack.Pop();
                     break;
                 }
-                else
-                {
-                    // SYSA
-                    throw new NotImplementedException();
+                // SYSA
+                throw new NotImplementedException();
                 break;
-                }
             case 0x1000:
                 //jpa
                 //cp = nnn
