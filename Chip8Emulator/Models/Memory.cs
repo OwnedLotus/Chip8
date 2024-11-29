@@ -1,16 +1,29 @@
+using System.Collections.Generic;
 using System.IO;
 
 namespace Chip8Emulator.Models;
 
 public class Memory
 {
-    private readonly byte[] _data = new byte[0xFFF];
+    private readonly List<byte> _data = new();
+    private FileStream _fileStream;
     private BinaryReader _reader;
 
     public Memory(string path)
     {
-        // read rom from file as binary
-        _reader = new BinaryReader(File.Open(path, FileMode.Open));
+        //read from file
+        _fileStream = File.Open(path, FileMode.Open);
+        
+        if (_fileStream is null) throw new FileNotFoundException();
+        _reader = new BinaryReader(_fileStream);
+        _reader.BaseStream.Seek(0, SeekOrigin.Begin);
+    }
+
+    public byte ReadNextByte()
+    {
+        if (_reader.BaseStream.Position != _reader.BaseStream.Length)
+            return _reader.ReadByte();
+        return 0x00;
     }
 }
 
