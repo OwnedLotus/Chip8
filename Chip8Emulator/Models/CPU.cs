@@ -1,40 +1,217 @@
 // http://devernay.free.fr/hacks/chip8/C8TECH10.HTM
+
+using System;
+
 namespace Chip8Emulator.Models;
 
-public class CPU
+public class Cpu()
 {
-    private Registers _registers;
-    private OpCode _currentOpCode;
-    private OpCode _nextOpCode;
-    private byte _keyboardKey = 0x0;
+    private Registers _registers = new();
+    private Instruction _instruction = new();
+    private byte _keyboardKey = 0xFF; // Max value is no input
+    private SoundTimer _soundTimer = new();
+    private DelayTimer _delayTimer = new();
 
-    public CPU()
+    public void Tick()
     {
-        _registers = new Registers();
+        _delayTimer.Tick();
+        _soundTimer.Tick();
+    }
+
+    public void ReadKey(byte key)
+    {
+        _keyboardKey = key;
+    }
+
+    public void LoadInstruction(Instruction instruction)
+    {
+        _instruction = instruction;
+    }
+
+    public void ExecuteInstruction(ushort opcode)
+    {
+        byte x = (byte)((opcode & 0x0F00) >> 8);
+        byte y = (byte)((opcode & 0x00F0) >> 4);
+        byte kk = (byte)(opcode & 0x00FF);
+        ushort nnn = (ushort)(opcode & 0x0FFF);
+        byte n = (byte)(opcode & 0x000F);
+
+        switch (opcode & 0xF000)
+        {
+            case 0x0000:
+                if (opcode == 0x00E0)
+                {
+                    // CLS
+                    throw new NotImplementedException();
+                break;
+                } 
+                else if (opcode == 0x00EE)
+                {
+                    // RET
+                    // pc = stack.Pop();
+                    throw new NotImplementedException();
+                break;
+                }
+                else
+                {
+                    // SYSA
+                    throw new NotImplementedException();
+                break;
+                }
+            case 0x1000:
+                //jpa
+                //cp = nnn
+                break;
+            case 0x2000:
+                // CALLA
+                //stack.push(pc)
+                //pc = nnn
+                break;
+            case 0x3000:
+                // SEVXB
+                // if(V[x] == kk) pc += 2
+                break;
+            case 0x4000:
+                // SNEXB
+                // if(V[x] != kk) pc += 2
+                break;
+            case 0x5000:
+                // SEXY
+                // if (v[x] != v[y]) pc += 2
+                break;
+            case 0x6000:
+                // LDXB
+                // V[x] == kk
+                break;
+            case 0x7000:
+                // ADDXB
+                // V[x] += KK
+                break;
+            case 0x8000:
+                switch (n)
+                {
+                    case 0x0:
+                        // LDXY
+                        // v[x] = v[y]
+                        break;
+                    case 0x1:
+                        // LDOXY (OR vx vy) V[x] |= V[y];
+                        break; 
+                    case 0x2: // ANDXY V[x] &= V[y];
+                        break; 
+                    case 0x3: // XORXY V[x] ^= V[y];
+                        break; 
+                    case 0x4: // ADDXY ushort sum = (ushort)(V[x] + V[y]); V[0xF] = (byte)(sum > 255 ? 1 : 0); // Set carry flag V[x] = (byte)sum;
+                              break; 
+                    case 0x5: // SUBXY V[0xF] = (byte)(V[x] > V[y] ? 1 : 0); // Set borrow flag V[x] -= V[y];
+                        break; 
+                    case 0x6: // SHRXY V[0xF] = (byte)(V[x] & 0x1); // Store least significant bit in VF V[x] >>= 1;
+                        break; 
+                    case 0x7: // SUBNXY V[0xF] = (byte)(V[y] > V[x] ? 1 : 0); // Set borrow flag V[x] = (byte)(V[y] - V[x]);
+                        break; 
+                    case 0xE: // SHLXY V[0xF] = (byte)(V[x] >> 7); // Store most significant bit in VF V[x] <<= 1;
+                        break;
+                }
+                break;
+            case 0x9000:
+                // SNEXY
+                // if(v[x] != v[y]) += 2
+                break;
+            case 0xA000:
+                // LDIA
+                // I = nnn;
+                break;
+            case 0xB000:
+                // JP0A
+                //pc = (ushort)(v[0] + nnn)
+                break;
+            case 0xC000:
+                // RNDXB
+                // v[x] = (byte)(new Random().Next(256) & kk)
+                break;
+            case 0xD000:
+                // DRWXY (nibble )
+            break;
+            case 0xE000:
+                if (kk == 0x9E)
+                {
+                    //SKPX
+                    // Implement Key Press
+                }
+                else if (kk == 0xA1)
+                {
+                    // SKNP
+                    // Implement Key not pressed check
+                }
+                break;
+            case 0xF000:
+                switch (kk)
+                {
+                    case 0x07:
+                        // LDXD
+                        // v[x] = delayTimer;
+                        break;
+                    case 0x0A:
+                        // LDXK
+                        // Implement Key press wait
+                        break;
+                    case 0x15:
+                        // LDDX
+                        // delayTimer = v[x]
+                        break;
+                    case 0x18:
+                        // LDSX
+                        // soundTimer = v[x]
+                        break;
+                    case 0x1E:
+                        // ADDIX
+                        //I += v[x]
+                        break;
+                    case 0x29:
+                        // LDFX
+                        // Implement setting I to font character
+                        break;
+                    case 0x33:
+                        // LDBX
+                        // Implement storing BCD representation
+                        break;
+                    case 0x55:
+                        // LDIX
+                        // for (int i = 0; i <= x; i++) memory[I + i] = V[i]
+                        break;
+                    case 0x65:
+                        // LDXI
+                        // for(int i = 0; i <= x; i++) v[i] = (byte)memory[I + i]
+                        break;
+                }
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown opcode: 0x{opcode:X}");
+        }
     }
 }
 
-public struct Registers
+public struct Registers()
 {
-    private byte v0;
-    private byte v1;
-    private byte v2;
-    private byte v3;
-    private byte v4;
-    private byte v5;
-    private byte v6;
-    private byte v7;
-    private byte v8;
-    private byte v9;
-    private byte vA;
-    private byte vB;
-    private byte vC;
-    private byte vD;
-    private byte vE;
-    private byte vF;
-    private ushort I; // Lowest 12 bits are used
-    private byte ST; // Sound Timer
-    private byte DT; // Delay Timer
+    private byte v0 = byte.MinValue;
+    private byte v1 = byte.MinValue;
+    private byte v2 = byte.MinValue;
+    private byte v3 = byte.MinValue;
+    private byte v4 = byte.MinValue;
+    private byte v5 = byte.MinValue;
+    private byte v6 = byte.MinValue;
+    private byte v7 = byte.MinValue;
+    private byte v8 = byte.MinValue;
+    private byte v9 = byte.MinValue;
+    private byte vA = byte.MinValue;
+    private byte vB = byte.MinValue;
+    private byte vC = byte.MinValue;
+    private byte vD = byte.MinValue;
+    private byte vE = byte.MinValue;
+    private byte vF  = byte.MinValue;
+    private ushort I = ushort.MinValue; // Lowest 12 bits are used
+    private byte SP = byte.MinValue;
+    private ushort PC = ushort.MinValue;
 }
 
 /* OpCodes for CHIP8
@@ -74,8 +251,3 @@ public struct Registers
    Fx55 - LD [I], Vx
    Fx65 - LD Vx, [I]
  */
-
-enum OpCode 
-{
-    
-}
