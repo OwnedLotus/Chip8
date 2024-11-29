@@ -1,16 +1,19 @@
 // http://devernay.free.fr/hacks/chip8/C8TECH10.HTM
 
 using System;
+using System.Collections.Generic;
 
 namespace Chip8Emulator.Models;
 
 public class Cpu()
 {
     private Registers _registers = new();
-    private Instruction _instruction = new();
+    private ushort _opcode = 0x0000;
     private byte _keyboardKey = 0xFF; // Max value is no input
     private SoundTimer _soundTimer = new();
     private DelayTimer _delayTimer = new();
+    private Stack<ushort> _addressStack = new();
+    private Memory _memory;
 
     public void Tick()
     {
@@ -23,34 +26,34 @@ public class Cpu()
         _keyboardKey = key;
     }
 
-    public void LoadInstruction(Instruction instruction)
+    public void ReadOpCode(ushort opcode)
     {
-        _instruction = instruction;
+        _opcode = opcode;
     }
 
-    public void ExecuteInstruction(ushort opcode)
+    public void ExecuteInstruction()
     {
-        byte x = (byte)((opcode & 0x0F00) >> 8);
-        byte y = (byte)((opcode & 0x00F0) >> 4);
-        byte kk = (byte)(opcode & 0x00FF);
-        ushort nnn = (ushort)(opcode & 0x0FFF);
-        byte n = (byte)(opcode & 0x000F);
+        byte x = (byte)((_opcode & 0x0F00) >> 8);
+        byte y = (byte)((_opcode & 0x00F0) >> 4);
+        byte kk = (byte)(_opcode & 0x00FF);
+        ushort nnn = (ushort)(_opcode & 0x0FFF);
+        byte n = (byte)(_opcode & 0x000F);
 
-        switch (opcode & 0xF000)
+        switch (_opcode & 0xF000)
         {
             case 0x0000:
-                if (opcode == 0x00E0)
+                if (_opcode == 0x00E0)
                 {
                     // CLS
                     throw new NotImplementedException();
-                break;
+                    break;
                 } 
-                else if (opcode == 0x00EE)
+                else if (_opcode == 0x00EE)
                 {
                     // RET
                     // pc = stack.Pop();
-                    throw new NotImplementedException();
-                break;
+                    _registers.PC = _addressStack.Pop();
+                    break;
                 }
                 else
                 {
@@ -66,14 +69,18 @@ public class Cpu()
                 // CALLA
                 //stack.push(pc)
                 //pc = nnn
+                _addressStack.Push(_registers.PC);
+                _registers.PC = nnn;
                 break;
             case 0x3000:
                 // SEVXB
                 // if(V[x] == kk) pc += 2
+                if (_registers.v[x] == kk) _registers.PC += 2; 
                 break;
             case 0x4000:
                 // SNEXB
                 // if(V[x] != kk) pc += 2
+                if (_registers.v[x] != kk) _registers.PC += 2;
                 break;
             case 0x5000:
                 // SEXY
@@ -186,32 +193,19 @@ public class Cpu()
                 }
                 break;
             default:
-                throw new InvalidOperationException($"Unknown opcode: 0x{opcode:X}");
+                throw new InvalidOperationException($"Unknown opcode: 0x{_opcode:X}");
         }
     }
 }
 
 public struct Registers()
 {
-    private byte v0 = byte.MinValue;
-    private byte v1 = byte.MinValue;
-    private byte v2 = byte.MinValue;
-    private byte v3 = byte.MinValue;
-    private byte v4 = byte.MinValue;
-    private byte v5 = byte.MinValue;
-    private byte v6 = byte.MinValue;
-    private byte v7 = byte.MinValue;
-    private byte v8 = byte.MinValue;
-    private byte v9 = byte.MinValue;
-    private byte vA = byte.MinValue;
-    private byte vB = byte.MinValue;
-    private byte vC = byte.MinValue;
-    private byte vD = byte.MinValue;
-    private byte vE = byte.MinValue;
-    private byte vF  = byte.MinValue;
-    private ushort I = ushort.MinValue; // Lowest 12 bits are used
-    private byte SP = byte.MinValue;
-    private ushort PC = ushort.MinValue;
+    public byte[] v = new byte[0xF];
+    
+    public ushort I { get; set; } = ushort.MinValue;
+    public byte SP { get; set; } = Byte.MinValue;
+    public ushort PC { get; set; } = ushort.MinValue;
+    
 }
 
 /* OpCodes for CHIP8
