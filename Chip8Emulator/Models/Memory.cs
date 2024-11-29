@@ -1,29 +1,30 @@
-using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 
 namespace Chip8Emulator.Models;
 
 public class Memory
 {
-    private readonly List<byte> _data = new();
-    private FileStream _fileStream;
-    private BinaryReader _reader;
-
+    private readonly ImmutableList<byte> _memory;
+    
     public Memory(string path)
     {
         //read from file
-        _fileStream = File.Open(path, FileMode.Open);
+        var fileStream = File.Open(path, FileMode.Open);
         
-        if (_fileStream is null) throw new FileNotFoundException();
-        _reader = new BinaryReader(_fileStream);
-        _reader.BaseStream.Seek(0, SeekOrigin.Begin);
+        if (fileStream is null) throw new FileNotFoundException($"Specified file {path} was not found.");
+        
+        var reader = new BinaryReader(fileStream);
+        reader.BaseStream.Seek(0, SeekOrigin.Begin);
+        _memory = [..reader.ReadBytes((int)reader.BaseStream.Length)];
+        
+        reader.Close();
+        fileStream.Close();
     }
 
-    public byte ReadNextByte()
+    public byte ReadByteAt(ushort pc)
     {
-        if (_reader.BaseStream.Position != _reader.BaseStream.Length)
-            return _reader.ReadByte();
-        return 0x00;
+        return _memory[pc];
     }
 }
 
